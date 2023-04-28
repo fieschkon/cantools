@@ -1,15 +1,14 @@
 # A CAN signal.
-import contextlib
 import decimal
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import Optional, Dict, TYPE_CHECKING, List, Any, Union
 
-from ...typechecking import ByteOrder, Choices, Comments, SignalValueType
+from ...typechecking import Comments, ByteOrder, Choices
 
 if TYPE_CHECKING:
     from ...database.can.formats.dbc import DbcSpecifics
 
 
-class Decimal:
+class Decimal(object):
     """Holds the same values as
     :attr:`~cantools.database.can.Signal.scale`,
     :attr:`~cantools.database.can.Signal.offset`,
@@ -20,36 +19,38 @@ class Decimal:
 
     """
 
-    def __init__(
-        self,
-        scale: decimal.Decimal,
-        offset: decimal.Decimal,
-        minimum: Optional[decimal.Decimal] = None,
-        maximum: Optional[decimal.Decimal] = None,
-    ) -> None:
+    def __init__(self,
+                 scale: Optional[decimal.Decimal] = None,
+                 offset: Optional[decimal.Decimal] = None,
+                 minimum: Optional[decimal.Decimal] = None,
+                 maximum: Optional[decimal.Decimal] = None) -> None:
         self._scale = scale
         self._offset = offset
         self._minimum = minimum
         self._maximum = maximum
 
     @property
-    def scale(self) -> decimal.Decimal:
-        """The scale factor of the signal value as ``decimal.Decimal``."""
+    def scale(self) -> Optional[decimal.Decimal]:
+        """The scale factor of the signal value as ``decimal.Decimal``.
+
+        """
 
         return self._scale
 
     @scale.setter
-    def scale(self, value: decimal.Decimal) -> None:
+    def scale(self, value: Optional[decimal.Decimal]) -> None:
         self._scale = value
 
     @property
-    def offset(self) -> decimal.Decimal:
-        """The offset of the signal value as ``decimal.Decimal``."""
+    def offset(self) -> Optional[decimal.Decimal]:
+        """The offset of the signal value as ``decimal.Decimal``.
+
+        """
 
         return self._offset
 
     @offset.setter
-    def offset(self, value: decimal.Decimal) -> None:
+    def offset(self, value: Optional[decimal.Decimal]) -> None:
         self._offset = value
 
     @property
@@ -79,7 +80,7 @@ class Decimal:
         self._maximum = value
 
 
-class NamedSignalValue:
+class NamedSignalValue(object):
     """Represents a named value of a signal.
 
     Named values map an integer number to a human-readable
@@ -87,12 +88,11 @@ class NamedSignalValue:
     descriptions for the named value.
     """
 
-    def __init__(
-        self,
-        value: int,
-        name: str,
-        comments: Optional[Dict[str, str]] = None,
-    ) -> None:
+    def __init__(self,
+                 value: int,
+                 name: str,
+                 comments: Optional[Dict[str, str]] = None,
+                 ) -> None:
         self._name = name
         self._value = value
         self._comments = comments or {}
@@ -107,7 +107,8 @@ class NamedSignalValue:
 
     @property
     def value(self) -> int:
-        """The integer value that gets mapped."""
+        """The integer value that gets mapped
+        """
 
         return self._value
 
@@ -138,18 +139,17 @@ class NamedSignalValue:
 
     def __eq__(self, x: Any) -> bool:
         if isinstance(x, NamedSignalValue):
-            return (
-                x.value == self.value
-                and x.name == self.name
+            return \
+                x.value == self.value \
+                and x.name == self.name \
                 and x.comments == self.comments
-            )
         elif isinstance(x, str):
             return x == self.name
 
         return False
 
 
-class Signal:
+class Signal(object):
     """A CAN signal with position, size, unit and other information. A
     signal is part of a message.
 
@@ -185,31 +185,30 @@ class Signal:
 
     """
 
-    def __init__(
-        self,
-        name: str,
-        start: int,
-        length: int,
-        byte_order: ByteOrder = "little_endian",
-        is_signed: bool = False,
-        raw_initial: Optional[Union[int, float]] = None,
-        raw_invalid: Optional[Union[int, float]] = None,
-        scale: float = 1,
-        offset: float = 0,
-        minimum: Optional[float] = None,
-        maximum: Optional[float] = None,
-        unit: Optional[str] = None,
-        choices: Optional[Choices] = None,
-        dbc_specifics: Optional["DbcSpecifics"] = None,
-        comment: Optional[Union[str, Comments]] = None,
-        receivers: Optional[List[str]] = None,
-        is_multiplexer: bool = False,
-        multiplexer_ids: Optional[List[int]] = None,
-        multiplexer_signal: Optional[str] = None,
-        is_float: bool = False,
-        decimal: Optional[Decimal] = None,
-        spn: Optional[int] = None,
-    ) -> None:
+    def __init__(self,
+                 name: str,
+                 start: int,
+                 length: int,
+                 byte_order: ByteOrder = 'little_endian',
+                 is_signed: bool = False,
+                 initial: Optional[int] = None,
+                 invalid: Optional[int] = None,
+                 scale: float = 1,
+                 offset: float = 0,
+                 minimum: Optional[float] = None,
+                 maximum: Optional[float] = None,
+                 unit: Optional[str] = None,
+                 choices: Optional[Choices] = None,
+                 dbc_specifics: Optional["DbcSpecifics"] = None,
+                 comment: Optional[Union[str, Comments]] = None,
+                 receivers: Optional[List[str]] = None,
+                 is_multiplexer: bool = False,
+                 multiplexer_ids: Optional[List[int]] = None,
+                 multiplexer_signal: Optional[str] = None,
+                 is_float: bool = False,
+                 decimal: Optional[Decimal] = None,
+                 spn: Optional[int] = None
+                 ) -> None:
         # avoid using properties to improve encoding/decoding performance
 
         #: The signal name as a string.
@@ -224,10 +223,10 @@ class Signal:
         #: ``True`` if the signal is a float, ``False`` otherwise.
         self.is_float: bool = is_float
 
-        #: The scaled minimum value of the signal, or ``None`` if unavailable.
+        #: The minimum value of the signal, or ``None`` if unavailable.
         self.minimum: Optional[float] = minimum
 
-        #: The scaled maximum value of the signal, or ``None`` if unavailable.
+        #: The maximum value of the signal, or ``None`` if unavailable.
         self.maximum: Optional[float] = maximum
 
         #: "A dictionary mapping signal values to enumerated choices, or
@@ -248,25 +247,12 @@ class Signal:
         #: ``True``.
         self.is_signed: bool = is_signed
 
-        #: The internal representation of the initial value of the signal,
-        #: or ``None`` if unavailable.
-        self.raw_initial: Optional[Union[int, float]] = raw_initial
+        #: The initial value of the signal, or ``None`` if unavailable.
+        self.initial: Optional[int] = initial
 
-        #: The initial value of the signal in units of the physical world,
+        #: The value representing that the signal is invalid,
         #: or ``None`` if unavailable.
-        self.initial: Optional[SignalValueType] = (
-            self.raw_to_scaled(raw_initial) if raw_initial is not None else None
-        )
-
-        #: The raw value representing that the signal is invalid,
-        #: or ``None`` if unavailable.
-        self.raw_invalid: Optional[Union[int, float]] = raw_invalid
-
-        #: The scaled value representing that the signal is invalid,
-        #: or ``None`` if unavailable.
-        self.invalid: Optional[SignalValueType] = (
-            self.raw_to_scaled(raw_invalid) if raw_invalid is not None else None
-        )
+        self.invalid: Optional[int] = invalid
 
         #: The high precision values of
         #: :attr:`~cantools.database.can.Signal.scale`,
@@ -276,7 +262,7 @@ class Signal:
         #:
         #: See :class:`~cantools.database.can.signal.Decimal` for more
         #: details.
-        self.decimal: Optional[Decimal] = decimal
+        self.decimal: Decimal = Decimal() if decimal is None else decimal
 
         #: The unit of the signal as a string, or ``None`` if unavailable.
         self.unit: Optional[str] = unit
@@ -316,51 +302,8 @@ class Signal:
             self.comments = {None: comment}
         else:
             # assume that we have either no comment at all or a
-            # multilingual dictionary
+            # multi-lingual dictionary
             self.comments = comment
-
-    def raw_to_scaled(
-        self, raw: Union[int, float], decode_choices: bool = True
-    ) -> SignalValueType:
-        """Convert an internal raw value according to the defined scaling or value table.
-
-        :param raw:
-            The raw value
-        :param decode_choices:
-            If `decode_choices` is ``False`` scaled values are not
-            converted to choice strings (if available).
-        :return:
-            The calculated scaled value
-        """
-        if decode_choices:
-            with contextlib.suppress(KeyError, TypeError):
-                return self.choices[raw]  # type: ignore[index]
-
-        if self.offset == 0 and self.scale == 1:
-            # treat special case to avoid introduction of unnecessary rounding error
-            return raw
-        return raw * self.scale + self.offset
-
-    def scaled_to_raw(self, scaled: SignalValueType) -> Union[int, float]:
-        """Convert a scaled value to the internal raw value.
-
-        :param scaled:
-            The scaled value.
-        :return:
-            The internal raw value.
-        """
-        if isinstance(scaled, (float, int)):
-            _transform = float if self.is_float else round
-            if self.offset == 0 and self.scale == 1:
-                # treat special case to avoid introduction of unnecessary rounding error
-                return _transform(scaled)  # type: ignore[operator,no-any-return]
-
-            return _transform((scaled - self.offset) / self.scale)  # type: ignore[operator,no-any-return]
-
-        if isinstance(scaled, (str, NamedSignalValue)):
-            return self.choice_string_to_number(str(scaled))
-
-        raise TypeError(f"Conversion of type {type(scaled)} is not supported.")
 
     @property
     def comment(self) -> Optional[str]:
@@ -377,7 +320,7 @@ class Signal:
         elif self.comments.get("FOR-ALL") is not None:
             return self.comments.get("FOR-ALL")
 
-        return self.comments.get("EN")
+        return self.comments.get('EN')
 
     @comment.setter
     def comment(self, value: Optional[str]) -> None:
@@ -400,27 +343,25 @@ class Signal:
         if self.choices is None:
             choices = None
         else:
-            list_of_choices = ", ".join(
-                [f"{value}: '{text}'" for value, text in self.choices.items()]
-            )
-            choices = f"{{{list_of_choices}}}"
+            choices = '{{{}}}'.format(', '.join(
+                ["{}: '{}'".format(value, text)
+                 for value, text in self.choices.items()]))
 
-        return (
-            f"signal("
-            f"'{self.name}', "
-            f"{self.start}, "
-            f"{self.length}, "
-            f"'{self.byte_order}', "
-            f"{self.is_signed}, "
-            f"{self.raw_initial}, "
-            f"{self.scale}, "
-            f"{self.offset}, "
-            f"{self.minimum}, "
-            f"{self.maximum}, "
-            f"'{self.unit}', "
-            f"{self.is_multiplexer}, "
-            f"{self.multiplexer_ids}, "
-            f"{choices}, "
-            f"{self.spn}, "
+        return \
+            f"signal(" \
+            f"'{self.name}', " \
+            f"{self.start}, " \
+            f"{self.length}, " \
+            f"'{self.byte_order}', " \
+            f"{self.is_signed}, " \
+            f"{self.initial}, " \
+            f"{self.scale}, " \
+            f"{self.offset}, " \
+            f"{self.minimum}, " \
+            f"{self.maximum}, " \
+            f"'{self.unit}', " \
+            f"{self.is_multiplexer}, " \
+            f"{self.multiplexer_ids}, " \
+            f"{choices}, " \
+            f"{self.spn}, " \
             f"{self.comments})"
-        )

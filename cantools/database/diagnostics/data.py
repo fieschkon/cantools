@@ -4,7 +4,7 @@ from typing import Optional
 from ...typechecking import ByteOrder, Choices
 
 
-class Data:
+class Data(object):
     """A data data with position, size, unit and other information. A data
     is part of a DID.
 
@@ -72,7 +72,7 @@ class Data:
             choices = None
         else:
             choices = '{{{}}}'.format(', '.join(
-                [f"{value}: '{text}'"
+                ["{}: '{}'".format(value, text)
                  for value, text in self.choices.items()]))
 
         return "data('{}', {}, {}, '{}', {}, {}, {}, {}, '{}', {})".format(

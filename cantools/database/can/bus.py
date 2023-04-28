@@ -1,6 +1,6 @@
 # A CAN bus.
 
-class Bus:
+class Bus(object):
     """A CAN bus.
 
     """

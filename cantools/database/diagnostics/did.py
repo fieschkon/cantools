@@ -2,10 +2,12 @@
 
 import binascii
 
-from ..utils import create_encode_decode_formats, decode_data, encode_data
+from ..utils import encode_data
+from ..utils import decode_data
+from ..utils import create_encode_decode_formats
 
 
-class Did:
+class Did(object):
     """A DID with identifier and other information.
 
     """

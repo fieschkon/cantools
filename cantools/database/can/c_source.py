@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from ...version import __version__
 
+
 HEADER_FMT = '''\
 /**
  * The MIT License (MIT)
@@ -64,12 +65,6 @@ extern "C" {{
 
 /* Signal choices. */
 {choices_defines}
-
-/* Frame Names. */
-{frame_name_macros}
-
-/* Signal Names. */
-{signal_name_macros}
 
 {structs}
 {declarations}
@@ -551,7 +546,7 @@ SIGNAL_MEMBER_FMT = '''\
 '''
 
 
-class Signal:
+class Signal(object):
 
     def __init__(self, signal):
         self._signal = signal
@@ -583,7 +578,7 @@ class Signal:
             else:
                 type_name = 'double'
         else:
-            type_name = f'int{self.type_length}_t'
+            type_name = 'int{}_t'.format(self.type_length)
 
             if not self.is_signed:
                 type_name = 'u' + type_name
@@ -641,7 +636,7 @@ class Signal:
 
         for value, name in items.items():
             if name in duplicated_names:
-                name += _canonical(f'_{value}')
+                name += _canonical('_{}'.format(value))
 
                 while name in unique_choices.values():
                     name += '_'
@@ -752,7 +747,7 @@ class Signal:
             index += 1
 
 
-class Message:
+class Message(object):
 
     def __init__(self, message):
         self._message = message
@@ -864,7 +859,7 @@ def _generate_signal(signal, bit_fields):
     if signal.is_float or not bit_fields:
         length = ''
     else:
-        length = f' : {signal.length}'
+        length = ' : {}'.format(signal.length)
 
     member = SIGNAL_MEMBER_FMT.format(comment=comment,
                                       range=range_,
@@ -893,7 +888,7 @@ def _format_pack_code_mux(message,
 
     lines = [
         '',
-        f'switch (src_p->{signal_name}) {{'
+        'switch (src_p->{}) {{'.format(signal_name)
     ]
 
     for multiplexer_id, multiplexed_signals in multiplexed_signals_per_id:
@@ -902,7 +897,7 @@ def _format_pack_code_mux(message,
                                              variable_lines,
                                              helper_kinds)
         lines.append('')
-        lines.append(f'case {multiplexer_id}:')
+        lines.append('case {}:'.format(multiplexer_id))
 
         if body_lines:
             lines.extend(body_lines[1:-1])
@@ -1019,7 +1014,7 @@ def _format_unpack_code_mux(message,
     signal_name = camel_to_snake_case(signal_name)
 
     lines = [
-        f'switch (dst_p->{signal_name}) {{'
+        'switch (dst_p->{}) {{'.format(signal_name)
     ]
 
     for multiplexer_id, multiplexed_signals in multiplexed_signals_per_id:
@@ -1029,7 +1024,7 @@ def _format_unpack_code_mux(message,
                                                helper_kinds,
                                                node_name)
         lines.append('')
-        lines.append(f'case {multiplexer_id}:')
+        lines.append('case {}:'.format(multiplexer_id))
         lines.extend(_strip_blank_lines(body_lines))
         lines.append('    break;')
 
@@ -1048,10 +1043,10 @@ def _format_unpack_code_signal(message,
                                variable_lines,
                                helper_kinds):
     signal = message.get_signal_by_name(signal_name)
-    conversion_type_name = f'uint{signal.type_length}_t'
+    conversion_type_name = 'uint{}_t'.format(signal.type_length)
 
     if signal.is_float or signal.is_signed:
-        variable = f'    {conversion_type_name} {signal.snake_name};'
+        variable = '    {} {};'.format(conversion_type_name, signal.snake_name)
         variable_lines.append(variable)
 
     segments = signal.segments(invert_shift=True)
@@ -1173,7 +1168,7 @@ def _generate_struct(message, bit_fields):
     if message.comment is None:
         comment = ''
     else:
-        comment = f' * {message.comment}\n *\n'
+        comment = ' * {}\n *\n'.format(message.comment)
 
     return comment, members
 
@@ -1206,18 +1201,18 @@ def _generate_encode_decode(message, use_float):
 
         if offset == 0 and scale == 1:
             encoding = 'value'
-            decoding = f'({floating_point_type})value'
+            decoding = '({})value'.format(floating_point_type)
         elif offset != 0 and scale != 1:
             encoding = '(value - {}) / {}'.format(formatted_offset,
                                                   formatted_scale)
             decoding = '(({})value * {}) + {}'.format(floating_point_type, formatted_scale,
                                                       formatted_offset)
         elif offset != 0:
-            encoding = f'value - {formatted_offset}'
-            decoding = f'({floating_point_type})value + {formatted_offset}'
+            encoding = 'value - {}'.format(formatted_offset)
+            decoding = '({})value + {}'.format(floating_point_type, formatted_offset)
         else:
-            encoding = f'value / {formatted_scale}'
-            decoding = f'({floating_point_type})value * {formatted_scale}'
+            encoding = 'value / {}'.format(formatted_scale)
+            decoding = '({})value * {}'.format(floating_point_type, formatted_scale)
 
         encode_decode.append((encoding, decoding))
 
@@ -1262,7 +1257,7 @@ def _generate_is_in_range(message):
 
             if (minimum_type_value is None) or (minimum > minimum_type_value):
                 minimum = _format_decimal(minimum, signal.is_float)
-                check.append(f'(value >= {minimum}{suffix})')
+                check.append('(value >= {}{})'.format(minimum, suffix))
 
         if maximum is not None:
             if not signal.is_float:
@@ -1272,7 +1267,7 @@ def _generate_is_in_range(message):
 
             if (maximum_type_value is None) or (maximum < maximum_type_value):
                 maximum = _format_decimal(maximum, signal.is_float)
-                check.append(f'(value <= {maximum}{suffix})')
+                check.append('(value <= {}{})'.format(maximum, suffix))
 
         if not check:
             check = ['true']
@@ -1356,31 +1351,6 @@ def _generate_choices_defines(database_name, messages, node_name):
     return '\n\n'.join(choices_defines)
 
 
-def _generate_frame_name_macros(database_name, messages, node_name):
-    result = '\n'.join([
-        '#define {}_{}_NAME "{}"'.format(
-            database_name.upper(),
-            message.snake_name.upper(),
-            message.name)
-        for message in messages if _is_sender_or_receiver(message, node_name)
-    ])
-
-    return result
-
-
-def _generate_signal_name_macros(database_name, messages, node_name):
-    result = '\n'.join([
-        '#define {}_{}_{}_NAME "{}"'.format(
-            database_name.upper(),
-            message.snake_name.upper(),
-            signal.snake_name.upper(),
-            signal.name)
-        for message in messages if _is_sender_or_receiver(message, node_name) for signal in message.signals
-    ])
-
-    return result
-
-
 def _generate_structs(database_name, messages, bit_fields, node_name):
     structs = []
 
@@ -1423,7 +1393,7 @@ def _generate_declarations(database_name, messages, floating_point_numbers, use_
                 is_receiver = True
 
             signal_declaration = ''
-
+            
             if floating_point_numbers:
                 if is_sender:
                     signal_declaration += SIGNAL_DECLARATION_ENCODE_FMT.format(
@@ -1446,7 +1416,7 @@ def _generate_declarations(database_name, messages, floating_point_numbers, use_
                     message_name=message.snake_name,
                     signal_name=signal.snake_name,
                     type_name=signal.type_name)
-
+                
                 signal_declarations.append(signal_declaration)
         declaration = ""
         if is_sender:
@@ -1482,7 +1452,7 @@ def _generate_definitions(database_name, messages, floating_point_numbers, use_f
                                                    _generate_is_in_range(message)):
             if _is_receiver(signal, node_name):
                 is_receiver = True
-
+            
             if check == 'true':
                 unused = '    (void)value;\n\n'
             else:
@@ -1573,7 +1543,7 @@ def _generate_helpers_kind(kinds, left_format, right_format):
     helpers = []
 
     for shift_direction, length in sorted(kinds):
-        var_type = f'uint{length}_t'
+        var_type = 'uint{}_t'.format(length)
         helper = formats[shift_direction].format(length=length,
                                                  var_type=var_type)
         helpers.append(helper)
@@ -1612,7 +1582,7 @@ def _generate_fuzzer_source(database_name,
         test = TEST_FMT.format(name=name)
         tests.append(test)
 
-        call = f'    test_{name}(data_p, size);'
+        call = '    test_{}(data_p, size);'.format(name)
         calls.append(call)
 
     source = FUZZER_SOURCE_FMT.format(version=__version__,
@@ -1656,13 +1626,13 @@ def generate(database,
     numbers in the generated code.
 
     Set `bit_fields` to ``True`` to generate bit fields in structs.
-
+    
     Set `use_float` to ``True`` to prefer the `float` type instead
     of the `double` type for floating point numbers.
 
     `node_name` specifies the node for which message packers will be generated.
     For all other messages, unpackers will be generated. If `node_name` is not
-    provided, both packers and unpackers will be generated.
+    provided, both packers and unpackers will be generated. 
 
     This function returns a tuple of the C header and source files as
     strings.
@@ -1671,7 +1641,7 @@ def generate(database,
 
     date = time.ctime()
     messages = [Message(message) for message in database.messages]
-    include_guard = f'{database_name.upper()}_H'
+    include_guard = '{}_H'.format(database_name.upper())
     frame_id_defines = _generate_frame_id_defines(database_name, messages, node_name)
     frame_length_defines = _generate_frame_length_defines(database_name,
                                                           messages,
@@ -1685,10 +1655,6 @@ def generate(database,
         messages,
         node_name)
     choices_defines = _generate_choices_defines(database_name, messages, node_name)
-
-    frame_name_macros = _generate_frame_name_macros(database_name, messages, node_name)
-    signal_name_macros = _generate_signal_name_macros(database_name, messages, node_name)
-
     structs = _generate_structs(database_name, messages, bit_fields, node_name)
     declarations = _generate_declarations(database_name,
                                           messages,
@@ -1710,8 +1676,6 @@ def generate(database,
                                is_extended_frame_defines=is_extended_frame_defines,
                                frame_cycle_time_defines=frame_cycle_time_defines,
                                choices_defines=choices_defines,
-                               frame_name_macros=frame_name_macros,
-                               signal_name_macros=signal_name_macros,
                                structs=structs,
                                declarations=declarations)
 

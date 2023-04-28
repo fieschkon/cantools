@@ -1,6 +1,6 @@
 # Internal diagnostics database.
 
-class InternalDatabase:
+class InternalDatabase(object):
     """Internal diagnostics database.
 
     """

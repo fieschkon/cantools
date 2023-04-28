@@ -243,7 +243,7 @@ def layout_string(message, signal_names=True):
 
         # Add byte numbering.
         number_width = len(str(len(lines))) + 4
-        number_fmt = f'{{:{number_width - 1}d}} {{}}'
+        number_fmt = '{{:{}d}} {{}}'.format(number_width - 1)
         a = []
 
         for number, line in enumerate(lines):
@@ -376,6 +376,6 @@ def signal_choices_string(message):
             lines.append(signal.name)
 
             for value, text in sorted(signal.choices.items()):
-                lines.append(f'    {value} {text}')
+                lines.append('    {} {}'.format(value, text))
 
     return '\n'.join(lines)

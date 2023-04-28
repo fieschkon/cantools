@@ -1,16 +1,16 @@
 # The tester module.
 
-import queue
 import time
 from collections import UserDict
-from typing import Dict, List, Optional
-
+import queue
 import can
+
+from typing import Optional, Dict, List
 
 from .errors import Error
 
 
-class DecodedMessage:
+class DecodedMessage(object):
     """A decoded message.
 
     """
@@ -23,12 +23,12 @@ class DecodedMessage:
 class Messages(UserDict):
     def __setitem__(self, message_name, value):
         if getattr(self, '_frozen', False):
-            if message_name not in self.data:
+            if not message_name in self.data:
                 raise KeyError(message_name)
         self.data[message_name] = value
 
     def __missing__(self, key):
-        raise Error(f"invalid message name '{key}'")
+        raise Error("invalid message name '{}'".format(key))
 
 
 def _invert_signal_tree(
@@ -111,7 +111,7 @@ class Listener(can.Listener):
         self._input_queue.put(decoded)
 
 
-class Message(UserDict):
+class Message(UserDict, object):
 
     def __init__(self,
                  database,
@@ -121,7 +121,7 @@ class Message(UserDict):
                  decode_choices,
                  scaling,
                  padding):
-        super().__init__()
+        super(Message, self).__init__()
         self.database = database
         self._mplex_map = invert_signal_tree(database.signal_tree)
         self._can_bus = can_bus
@@ -144,7 +144,7 @@ class Message(UserDict):
         return self.data[signal_name]
 
     def __setitem__(self, signal_name, value):
-        if signal_name not in self._signal_names:
+        if not signal_name in self._signal_names:
             raise KeyError(signal_name)
         self.data[signal_name] = value
         self._update_can_message()
@@ -271,7 +271,7 @@ class Message(UserDict):
             maximum = 0 if not signal.maximum else signal.maximum
             if signal.initial:
                 # use initial signal value (if set)
-                initial_sig_values[signal.name] = signal.initial
+                initial_sig_values[signal.name] = (signal.initial * signal.decimal.scale) + signal.decimal.offset
             elif signal.is_multiplexer:
                 initial_sig_values[signal.name] = mplex_settings.get(signal.name, 0)
             elif minimum <= 0 <= maximum:
@@ -283,7 +283,7 @@ class Message(UserDict):
         return initial_sig_values
 
 
-class Tester:
+class Tester(object):
     """Test given node `dut_name` on given CAN bus `bus_name`.
 
     `database` is a :class:`~cantools.database.can.Database` instance.

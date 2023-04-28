@@ -1,12 +1,11 @@
 # Utilities for calculating the CRC of the AUTOSAR end-to-end
 # protection specification
 
-from typing import Optional, Union
-
-import crccheck  # type: ignore
+import crccheck # type: ignore
 
 from ..database.can.message import Message
 
+from typing import Union, List, Optional
 
 def compute_profile2_crc(payload : Union[bytes, bytearray],
                          msg_or_data_id: Union[int, Message]) -> Optional[int]:

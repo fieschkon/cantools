@@ -1,26 +1,24 @@
 from typing import (
     TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Mapping,
     NamedTuple,
+    Union,
+    Mapping,
+    Dict,
     Optional,
-    OrderedDict,
+    List,
+    Any,
     Sequence,
     Tuple,
-    Union,
+    Callable,
 )
 
+from typing_extensions import TypedDict, Literal, OrderedDict
 from bitstruct import CompiledFormatDict
-from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     import os
-
-    from .database import Message, Signal
+    import sys
+    from .database import Signal, Message
     from .database.can.signal import NamedSignalValue
 
 
@@ -47,7 +45,7 @@ Choices = OrderedDict[int, Union[str, "NamedSignalValue"]]
 # Type aliases. Introduced to reduce type annotation complexity while
 # allowing for more complex encode/decode schemes like the one used
 # for AUTOSAR container messages.
-SignalValueType = Union[int, float, str, "NamedSignalValue"]
+SignalValueType = Union[float, str, "NamedSignalValue"]
 SignalDictType = Dict[str, SignalValueType]
 SignalMappingType = Mapping[str, SignalValueType]
 ContainerHeaderSpecType = Union["Message", str, int]

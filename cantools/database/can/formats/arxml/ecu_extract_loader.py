@@ -1,15 +1,17 @@
 # Load an ECU extract CAN database from an ARXML formatted file.
 import logging
-from decimal import Decimal
+
 from typing import Any, List
+from xml.etree import ElementTree
 
-from ....utils import sort_signals_by_start_bit, type_sort_signals
+from ....utils import type_sort_signals, sort_signals_by_start_bit
 from ...bus import Bus
-from ...internal_database import InternalDatabase
 from ...message import Message
-from ...signal import Decimal as SignalDecimal
 from ...signal import Signal
+from ...internal_database import InternalDatabase
 
+from decimal import Decimal
+from ...signal import Decimal as SignalDecimal
 
 def make_xpath(location: List[str]) -> str:
     """Convenience function to traverse the XML element tree more easily
@@ -47,7 +49,7 @@ REFERENCE_VALUES_XPATH = make_xpath([
     'REFERENCE-VALUES'
 ])
 
-class EcuExtractLoader:
+class EcuExtractLoader(object):
 
     def __init__(self,
                  root:Any,
@@ -75,7 +77,7 @@ class EcuExtractLoader:
 
         if len(com_xpaths) != 1:
             raise ValueError(
-                f'Expected 1 /Com, but got {len(com_xpaths)}.')
+                'Expected 1 /Com, but got {}.'.format(len(com_xpaths)))
 
         com_config = self.find_com_config(com_xpaths[0] + '/ComConfig')
 
@@ -129,7 +131,7 @@ class EcuExtractLoader:
                 com_pdu_id_ref)
         else:
             raise NotImplementedError(
-                f'Direction {direction} not supported.')
+                'Direction {} not supported.'.format(direction))
 
         if frame_id is None:
             LOGGER.warning('No frame id found for message %s.', name)

@@ -1,4 +1,4 @@
-class AttributeDefinition:
+class AttributeDefinition(object):
     """A definition of an attribute that can be associated with attributes
     in nodes/messages/signals.
 

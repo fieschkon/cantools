@@ -3,7 +3,8 @@ import os
 import os.path
 
 from .. import database
-from ..database.can.c_source import camel_to_snake_case, generate
+from ..database.can.c_source import generate
+from ..database.can.c_source import camel_to_snake_case
 
 
 def _do_generate_c_source(args):
@@ -36,9 +37,9 @@ def _do_generate_c_source(args):
         args.node)
 
     os.makedirs(args.output_directory, exist_ok=True)
-
+    
     path_h = os.path.join(args.output_directory, filename_h)
-
+    
     with open(path_h, 'w') as fout:
         fout.write(header)
 
@@ -47,7 +48,7 @@ def _do_generate_c_source(args):
     with open(path_c, 'w') as fout:
         fout.write(source)
 
-    print(f'Successfully generated {path_h} and {path_c}.')
+    print('Successfully generated {} and {}.'.format(path_h, path_c))
 
     if args.generate_fuzzer:
         fuzzer_path_c = os.path.join(args.output_directory, fuzzer_filename_c)

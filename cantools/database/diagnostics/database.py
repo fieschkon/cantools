@@ -1,12 +1,13 @@
 import logging
 
-from ...compat import fopen
 from .formats import cdd
+from ...compat import fopen
+
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Database:
+class Database(object):
     """This class contains all DIDs.
 
     The factory functions :func:`load()<cantools.database.load()>`,

@@ -2,35 +2,44 @@
 
 import logging
 from copy import deepcopy
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import (
+    List,
+    Optional,
+    Union,
+    Dict,
+    TYPE_CHECKING,
+    Set,
+    Tuple,
+    cast
+)
 
-from ...typechecking import (
-    Codec,
-    Comments,
-    ContainerDecodeResultListType,
-    ContainerDecodeResultType,
-    ContainerEncodeInputType,
-    ContainerHeaderSpecType,
-    ContainerUnpackListType,
-    ContainerUnpackResultType,
-    DecodeResultType,
-    EncodeInputType,
-    SignalDictType,
-    SignalMappingType,
-)
-from ..errors import DecodeError, EncodeError, Error
-from ..utils import (
-    SORT_SIGNALS_DEFAULT,
-    create_encode_decode_formats,
-    decode_data,
-    encode_data,
-    format_or,
-    sort_signals_by_start_bit,
-    start_bit,
-    type_sort_signals,
-)
 from .signal import NamedSignalValue, Signal
 from .signal_group import SignalGroup
+from ..utils import format_or
+from ..utils import start_bit
+from ..utils import encode_data
+from ..utils import decode_data
+from ..utils import create_encode_decode_formats
+from ..utils import type_sort_signals
+from ..utils import sort_signals_by_start_bit
+from ..utils import SORT_SIGNALS_DEFAULT
+from ..errors import Error
+from ..errors import EncodeError
+from ..errors import DecodeError
+from ...typechecking import (
+    Comments,
+    Codec,
+    SignalDictType,
+    SignalMappingType,
+    ContainerHeaderSpecType,
+    ContainerDecodeResultType,
+    ContainerDecodeResultListType,
+    ContainerEncodeInputType,
+    EncodeInputType,
+    ContainerUnpackResultType,
+    ContainerUnpackListType,
+    DecodeResultType,
+)
 
 if TYPE_CHECKING:
     from .formats.arxml import AutosarMessageSpecifics
@@ -39,7 +48,7 @@ if TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-class Message:
+class Message(object):
     """A CAN message with frame id, comment, signals and other
     information.
 
@@ -131,7 +140,7 @@ class Message:
         self._signal_tree: Optional[List[Union[str, List[str]]]] = None
         self._strict = strict
         self._protocol = protocol
-        self.refresh()
+        self.problems = self.refresh()
 
     def _create_codec(self,
                       parent_signal: Optional[str] = None,
@@ -801,7 +810,7 @@ class Message:
                           scaling: bool,
                           padding: bool) -> bytes:
 
-        result = b""
+        result = bytes()
 
         for header, value in data:
             if isinstance(header, str):
@@ -1223,6 +1232,7 @@ class Message:
 
         # Check that the signal fits in the message.
         if len(signal_bits) > len(message_bits):
+            return signal
             raise Error(
                 'The signal {} does not fit in message {}.'.format(
                     signal.name,
@@ -1233,6 +1243,7 @@ class Message:
         for offset, signal_bit in enumerate(signal_bits):
             if signal_bit is not None:
                 if message_bits[offset] is not None:
+                    return signal
                     raise Error(
                         'The signals {} and {} are overlapping in message {}.'.format(
                             signal.name,
@@ -1257,12 +1268,16 @@ class Message:
                     message_bits[i] = child_bit
 
     def _check_signal_tree(self, message_bits, signal_tree):
+        problemsignals = []
         for signal_name in signal_tree:
             if isinstance(signal_name, dict):
                 self._check_mux(message_bits, signal_name)
             else:
-                self._check_signal(message_bits,
+                a = self._check_signal(message_bits,
                                    self.get_signal_by_name(signal_name))
+                if a != None:
+                    problemsignals.append(a)
+        return problemsignals
 
     def _check_signal_lengths(self):
         for signal in self._signals:
@@ -1294,7 +1309,7 @@ class Message:
 
         if strict:
             message_bits = 8 * self.length * [None]
-            self._check_signal_tree(message_bits, self.signal_tree)
+            return self._check_signal_tree(message_bits, self.signal_tree)
 
     def __repr__(self) -> str:
         return \

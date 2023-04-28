@@ -1,5 +1,4 @@
-from typing import List, Optional
-
+from typing import Optional, List
 
 class AutosarEnd2EndProperties:
     """This class collects all attributes that are required to implement

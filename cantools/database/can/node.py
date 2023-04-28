@@ -9,7 +9,7 @@ if typing.TYPE_CHECKING:
     from ...database.can.formats.dbc import DbcSpecifics
 
 
-class Node:
+class Node(object):
     """An NODE on the CAN bus.
 
     """

@@ -1,10 +1,9 @@
-from typing import List, Optional
+from typing import Optional, List
 
-from .end_to_end_properties import AutosarEnd2EndProperties
 from .secoc_properties import AutosarSecOCProperties
+from .end_to_end_properties import AutosarEnd2EndProperties
 
-
-class AutosarMessageSpecifics:
+class AutosarMessageSpecifics(object):
     """This class collects all AUTOSAR specific information of a CAN message
 
     This means useful information about CAN messages which is provided

@@ -1,15 +1,19 @@
 import os
-from typing import MutableMapping, Optional, TextIO, Union, cast
+from typing import Union, Optional, TextIO, MutableMapping, cast
+from xml.etree import ElementTree
 
+from .errors import ParseError
+from .errors import Error
+from ..compat import fopen
+from . import can
+from . import diagnostics
+from . import utils
+import textparser
 import diskcache
 
-from ..compat import fopen
-from ..typechecking import StringPathLike
-from . import can, diagnostics, utils
-
 # Remove once less users are using the old package structure.
-from .can import *  # noqa: F403
-from .errors import Error, ParseError
+from .can import *
+from ..typechecking import StringPathLike
 
 
 class UnsupportedDatabaseFormatError(Error):
@@ -25,23 +29,23 @@ class UnsupportedDatabaseFormatError(Error):
         message = []
 
         if e_arxml is not None:
-            message.append(f'ARXML: "{e_arxml}"')
+            message.append('ARXML: "{}"'.format(e_arxml))
 
         if e_dbc is not None:
-            message.append(f'DBC: "{e_dbc}"')
+            message.append('DBC: "{}"'.format(e_dbc))
 
         if e_kcd is not None:
-            message.append(f'KCD: "{e_kcd}"')
+            message.append('KCD: "{}"'.format(e_kcd))
 
         if e_sym is not None:
-            message.append(f'SYM: "{e_sym}"')
+            message.append('SYM: "{}"'.format(e_sym))
 
         if e_cdd is not None:
-            message.append(f'CDD: "{e_cdd}"')
+            message.append('CDD: "{}"'.format(e_cdd))
 
         message = ', '.join(message)
 
-        super().__init__(message)
+        super(UnsupportedDatabaseFormatError, self).__init__(message)
 
         self.e_arxml = e_arxml
         self.e_dbc = e_dbc
@@ -248,7 +252,7 @@ def dump_file(database,
         output = database.as_sym_string(sort_signals=sort_signals)
     else:
         raise Error(
-            f"Unsupported output database format '{database_format}'.")
+            "Unsupported output database format '{}'.".format(database_format))
 
     with fopen(filename, 'w', encoding=encoding, newline=newline) as fout:
         fout.write(output)
@@ -293,8 +297,7 @@ def load_string(string: str,
                 frame_id_mask: Optional[int] = None,
                 prune_choices: bool = False,
                 strict: bool = True,
-                sort_signals: utils.type_sort_signals = utils.sort_signals_by_start_bit) \
-        -> Union[can.Database, diagnostics.Database]:
+                sort_signals: utils.type_sort_signals = utils.sort_signals_by_start_bit) -> Union[can.Database, diagnostics.Database]:
     """Parse given database string and return a
     :class:`can.Database<.can.Database>` or
     :class:`diagnostics.Database<.diagnostics.Database>` object with
@@ -361,25 +364,25 @@ def load_string(string: str,
     if database_format in ['arxml', None]:
         try:
             return load_can_database('arxml')
-        except Exception as e:
+        except (ElementTree.ParseError, ValueError) as e:
             e_arxml = e
 
     if database_format in ['dbc', None]:
         try:
             return load_can_database('dbc')
-        except Exception as e:
+        except textparser.ParseError as e:
             e_dbc = e
 
     if database_format in ['kcd', None]:
         try:
             return load_can_database('kcd')
-        except Exception as e:
+        except (ElementTree.ParseError, ValueError) as e:
             e_kcd = e
 
     if database_format in ['sym', None]:
         try:
             return load_can_database('sym')
-        except Exception as e:
+        except ParseError as e:
             e_sym = e
 
     if database_format in ['cdd', None]:
@@ -387,19 +390,7 @@ def load_string(string: str,
             db = diagnostics.Database()
             db.add_cdd_string(string)
             return db
-        except Exception as e:
+        except (ElementTree.ParseError, ValueError) as e:
             e_cdd = e
 
-    if database_format is not None:
-        # raise an error while keeping the traceback of the original
-        # exception usable. note that for this we cannot auto-detect
-        # the format because the probing mechanism raises an exception
-        # for every single supported database format in this case
-        exc = e_arxml or e_dbc or e_kcd or e_sym or e_cdd
-        raise UnsupportedDatabaseFormatError(e_arxml,
-                                             e_dbc,
-                                             e_kcd,
-                                             e_sym,
-                                             e_cdd) from exc
-    else:
-        raise UnsupportedDatabaseFormatError(e_arxml, e_dbc, e_kcd, e_sym, e_cdd)
+    raise UnsupportedDatabaseFormatError(e_arxml, e_dbc, e_kcd, e_sym, e_cdd)
